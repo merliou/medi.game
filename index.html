@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Disinformation Game Demo</title>
+<style>
+  *{box-sizing:border-box}
+  body{
+    font-family:"Segoe UI",Roboto,Arial,sans-serif;
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(135deg,#9face6,#74ebd5);
+    color:#0f172a;
+    padding:24px;
+  }
+  .wrap{width:100%;max-width:760px;text-align:center;}
+  .card{
+    background:rgba(255,255,255,.97);
+    border-radius:16px;
+    padding:28px;
+    box-shadow:0 10px 30px rgba(2,6,23,.12);
+    overflow:hidden;
+    animation:fadeIn .4s ease;
+  }
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  h1{font-size:22px;margin-bottom:10px}
+  h2{margin-top:0}
+  p{line-height:1.5}
+  .btn{
+    padding:12px 10px;
+    border-radius:10px;
+    border:0;
+    font-weight:700;
+    cursor:pointer;
+    color:white;
+    transition:transform .15s ease,box-shadow .15s ease;
+    box-shadow:0 4px 12px rgba(2,6,23,.06);
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn-true{background:#16a34a}
+  .btn-fraud{background:#dc2626}
+  .btn-misinfo{background:#d97706}
+  .btn-disinfo{background:#2563eb}
+  .btn-malinf{background:#7c2ae8}
+  .btn-main{background:#111827;color:#fff;padding:14px 22px;font-size:16px;margin-top:20px}
+  .buttons{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:12px}
+  .feedback{margin-top:16px;font-weight:700;min-height:38px}
+  .score{font-weight:700;margin-bottom:8px}
+  img{max-width:100%;border-radius:12px;margin:12px 0;box-shadow:0 4px 14px rgba(0,0,0,.1)}
+  @media(max-width:520px){.buttons{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" id="card">
+      <h1>Disinformation Awareness Game</h1>
+      <p>This demo game was developed as part of a course at <b>University of Tartu</b> – <i>Media in the Era of Disinformation</i>.</p>
+      <p>The goal is to raise awareness, especially among <b>seniors</b> (but also other groups), about <b>fraud, misinformation, disinformation, malinformation,</b> and <b>clickbait</b> through an interactive and playful approach.</p>
+      <button class="btn-main" onclick="startGame()">Start Game ▶</button>
+    </div>
+  </div>
+
+<script>
+const IMG_SMS = "A_screenshot_of_an_iPhone_screen_displays_the_Teli.png";
+const IMG_HEAD = "A_screenshot_of_a_headline_from_the_Kroonika_websi.png";
+const IMG_EMAIL = "A_digital_screenshot_of_an_email_shows_the_Court_.png";
+
+const QUESTIONS_MASTER = [
+  { text:"Your package will be returned due to incorrect data. Update your information here: [link]",
+    image:IMG_SMS, correct:"FRAUD",
+    explanation:"Fraud — scammers impersonate delivery companies and use fake links to steal data." },
+  { text:"Court notice №17217 — Legal complaint attached. Respond as soon as possible.",
+    image:IMG_EMAIL, correct:"FRAUD",
+    explanation:"Fraud — imitates an official legal notice to scare people into opening malware." },
+  { text:"President Trump encouraged people to drink bleach to kill COVID.",
+    correct:"MISINFORMATION",
+    explanation:"Misinformation — false claim repeated without verification or intent to mislead." },
+  { text:"Electronic elections are fraudulent and unsafe; many politicians say they threaten democracy.",
+    correct:"DISINFORMATION",
+    explanation:"Disinformation — intentionally created to undermine trust in democracy." },
+  { text:"Israel is not sending aid to Gaza because all aid goes to terrorists.",
+    correct:"DISINFORMATION",
+    explanation:"Disinformation — mixes truth and lies to manipulate public opinion." },
+  { text:"A Facebook post shows people clubbing in Ukraine, claiming the war is fake because people still go out.",
+    correct:"MISINFORMATION",
+    explanation:"Misinformation — false context shared without intent to deceive." },
+  { text:"Trump buried his ex-wife on a golf course behind his property to avoid paying taxes.",
+    correct:"MALINFORMATION",
+    explanation:"Malinformation — true information used to harm someone's reputation." },
+  { text:"VIDEO | Maris Kõrvits refused to compete on ‘MasterChef’ because one rule is completely unacceptable to her.",
+    image:IMG_HEAD, correct:"MISINFORMATION", // (Clickbait)
+    explanation:"Clickbait — headline written to attract attention and get clicks, not necessarily false." },
+  { text:"Ott Tänak tried a new sport: the pressure can really motivate me.",
+    correct:"MISINFORMATION", // (Clickbait)
+    explanation:"Clickbait-style sports headline — focuses on drama to draw interest rather than inform." },
+  { text:"Kristel Aaslaid and Mattias Naan fulfilled a long-time dream together — they feel a different kind of peace inside.",
+    correct:"MISINFORMATION", // (Clickbait)
+    explanation:"Clickbait entertainment headline — emotional wording to get clicks." },
+  { text:"Vice President Kamala Harris used AI to make the crowd at the Detroit rally look bigger.",
+    correct:"DISINFORMATION",
+    explanation:"Disinformation — fabricated visual content designed to deceive." },
+  { text:"Omniva SMS: your parcel is being held. Please confirm your details to complete delivery.",
+    image:IMG_SMS, correct:"FRAUD",
+    explanation:"Fraud — fake courier message trying to steal data." }
+];
+
+let questions=[],index=0,score=0,total=0;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function startGame(){
+  questions=shuffle(QUESTIONS_MASTER.slice());
+  index=0;score=0;total=0;
+  showQuestion();
+}
+
+function showQuestion(){
+  const q=questions[index];
+  document.getElementById("card").innerHTML=`
+    <h2>Question ${index+1} of ${questions.length}</h2>
+    <div class="score">Score: ${score} / ${total}</div>
+    <p>${q.text}</p>
+    ${q.image?`<img src="${q.image}" alt="question image">`:""}
+    <div class="buttons">
+      <button class="btn btn-true" onclick="answer('TRUE')">TRUE</button>
+      <button class="btn btn-fraud" onclick="answer('FRAUD')">FRAUD</button>
+      <button class="btn btn-misinfo" onclick="answer('MISINFORMATION')">MISINFORMATION</button>
+      <button class="btn btn-disinfo" onclick="answer('DISINFORMATION')">DISINFORMATION</button>
+      <button class="btn btn-malinf" onclick="answer('MALINFORMATION')">MALINFORMATION</button>
+    </div>
+    <div class="feedback" id="feedback"></div>`;
+}
+
+function answer(choice){
+  const q=questions[index];
+  total++;
+  const ok = choice===q.correct;
+  if(ok)score++;
+  const fb=document.getElementById("feedback");
+  fb.style.color=ok?"#16a34a":"#dc2626";
+  fb.textContent=(ok?"✅ Correct — ":"❌ Wrong — ")+q.explanation;
+  setTimeout(()=>{index++;(index<questions.length)?showQuestion():endGame();},1600);
+}
+
+function endGame(){
+  document.getElementById("card").innerHTML=`
+    <h2>🎉 Game Finished!</h2>
+    <p>Your final score: <b>${score}</b> / ${total}</p>
+    <p>Thank you for playing! This demo was made for the <i>University of Tartu</i> course <b>Media in the Era of Disinformation</b>.</p>
+    <button class="btn-main" onclick="startGame()">Play Again 🔁</button>`;
+}
+</script>
+</body>
+</html>
+
+
